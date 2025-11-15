@@ -1,23 +1,21 @@
 "use client"
 
-import { Socket } from "socket.io-client";
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SendHorizonal } from "lucide-react"
-import { useContext, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import clsx from "clsx"
 import { useSocket } from "../providers/socket"
-import { useRoomId } from "../providers/roomId"
 
 type Message = {
   text: string
   sender: "user" | "bot"
 }
 
-export function ChatCard() {
-  const Socket = useSocket() as Socket | null;
+export function ChatCard({roomId}: {roomId: string}) {
+  const socket = useSocket();
 
   const [messages, setMessages] = useState<Message[]>([
     { text: "Hi, how can I help you today?", sender: "bot" },
@@ -27,37 +25,23 @@ export function ChatCard() {
   ])
 
   const [input, setInput] = useState("");
-  const { roomId, setRoomId } = useRoomId() as {roomId: string, setRoomId: (roomId: string) => void};
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!Socket) return;
-
-    const handleJoiningMsg = (msg: string, roomId_: string) => {
-      console.log(msg);
-      setRoomId(roomId_);
-    };
-
-    Socket.on("joining-msg", handleJoiningMsg);
-
-    return () => {
-      Socket.off("joining-msg", handleJoiningMsg);
-    };
-  }, [Socket]);
 
   useEffect(() => {
-    if(!Socket) return;
-    Socket.on("recieve-msg", (msg) => { 
+    if(!socket) return;
+    socket.on("recieve-msg", (msg) => { 
       console.log("Message received from server", msg);
-        setMessages((prev) => [...prev, { text : msg, sender : "user"}])
-      })
-  }, [Socket])
+      setMessages((prev) => [...prev, { text : msg, sender : "user"}])
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+    })
+  }, [socket])
 
   const sendMessage = () => {
     if (!input.trim()) return
 
     setMessages((prev) => [...prev, { text: input, sender: "user" }])
-    Socket?.emit("send-msg", input, roomId)
+    socket?.emit("send-msg", input, roomId)
     setInput("")
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }

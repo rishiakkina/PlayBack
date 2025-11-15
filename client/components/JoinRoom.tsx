@@ -17,15 +17,12 @@ import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useSocket } from "../providers/socket";
-import { Socket } from "socket.io-client";
-import { useRoomId } from "../providers/roomId";
-export function JoinRoom(props: React.PropsWithChildren<{}>) {
-  const {roomId, setRoomId} = useRoomId() as {roomId: string, setRoomId: (roomId: string) => void}
-  const [password, setPassword] = useState("");
-  const [isPrivate, setIsPrivate] = useState(false);
+
+export function JoinRoom() {
+  const [roomId, setRoomId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const Socket = useSocket() as Socket | null;
+  const socket = useSocket();
   async function joinRoom(e: React.FormEvent) { 
     e.preventDefault();
 
@@ -34,23 +31,16 @@ export function JoinRoom(props: React.PropsWithChildren<{}>) {
       return
     }
 
-    if(isPrivate && !password.trim()){
-      alert("Please enter a password")
-      return
-    }
-
     setIsLoading(true)
 
     try {
-      const response = await axios.post("http://localhost:8080/join-room", {
-        roomId: roomId,
-        password: password
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/join-room`, {
+        roomId: roomId
       })
       console.log(response.data)
 
 
       if(response.data.success){
-        Socket?.emit("join-room", roomId);
         setRoomId(roomId);
         router.push(`/room/${roomId}`);
       }else{
@@ -62,7 +52,6 @@ export function JoinRoom(props: React.PropsWithChildren<{}>) {
     }finally{
       setIsLoading(false);
     }
-    
   }
 
 
@@ -76,20 +65,21 @@ export function JoinRoom(props: React.PropsWithChildren<{}>) {
           <DialogHeader>
             <DialogTitle>Join a Room</DialogTitle>
             <DialogDescription>
-            Enter RoomId and password here. Click join when you&apos;re
-            done.
+            Enter RoomId here. Click join when you&apos;re done.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-3">
-              <Label htmlFor="name-1">Room name</Label>
-              <Input value={roomId} onChange={(e) => setRoomId(e.target.value)}/>
-            </div>
-            <div className="grid gap-3">
-                <Label htmlFor="password">Password</Label>
-                <Input type="password" placeholder="•••••••" value={password} onChange={(e) => setPassword(e.target.value)}/>
-            </div>
+          <div className="grid gap-3">
+            <Label htmlFor="name">Room name</Label>
+            <Input 
+              id="name"
+              value={roomId} 
+              onChange={(e) => setRoomId(e.target.value)}
+              placeholder="Enter room name"
+              required
+            />
           </div>
+        </div>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>

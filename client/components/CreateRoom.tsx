@@ -13,19 +13,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSocket } from "../providers/socket";
 const axios = require("axios").default;
-import { Socket } from "socket.io-client";
-import { useRoomId } from "../providers/roomId";
 
 export function CreateRoom() {
-  const Socket = useSocket() as Socket | null;
-  const {roomId, setRoomId} = useRoomId() as {roomId: string, setRoomId: (roomId: string) => void};
-  const [isPrivate, setIsPrivate] = useState(false);
-  const [password, setPassword] = useState("");
+  const socket = useSocket();
+  const [roomId, setRoomId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -38,33 +33,25 @@ export function CreateRoom() {
       return;
     }
     
-    if (isPrivate && !password.trim()) {
-      alert("Please enter a password for private room");
-      return;
-    }
-    
     setIsLoading(true);
     
     try {
-      const response = await axios.post("http://localhost:8080/create-room", { 
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/create-room`, { 
         roomName: roomId,
         roomId: roomId,
-        password: password || ""
       });
       
       console.log(response.data);
       
       if (response.data.success) {
         router.push(`/room/${roomId}`);
-        // Join the room via socket
-        Socket?.emit("join-room", roomId);
       } else {
         console.log(response.data.error);
         alert(response.data.error || "Failed to create room");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error creating room:", error);
-      alert(error.response?.data?.error || "Failed to create room");
+      alert(error || "Failed to create room");
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +67,7 @@ export function CreateRoom() {
         <DialogHeader>
           <DialogTitle>Create a Room</DialogTitle>
           <DialogDescription>
-            Enter Room name and password here. Click create when you&apos;re
+            Enter Room name here. Click create when you&apos;re
             done.
           </DialogDescription>
         </DialogHeader>
@@ -95,23 +82,6 @@ export function CreateRoom() {
               required
             />
           </div>
-          <div className="flex items-center space-x-2 ">
-              <Switch id="private" checked={isPrivate} onCheckedChange={setIsPrivate}/>
-              <Label htmlFor="private">Private Room</Label>
-          </div>
-          {isPrivate && (
-              <div className="grid gap-3">
-                  <Label htmlFor="password">Password</Label>
-                  <Input 
-                    id="password" 
-                    type="password"
-                    placeholder="•••••••" 
-                    value={password} 
-                    onChange={(e) => setPassword(e.target.value)}
-                    required={isPrivate}
-                  />
-              </div>
-          )}
         </div>
         <DialogFooter>
           <DialogClose asChild>

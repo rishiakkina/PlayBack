@@ -29,37 +29,56 @@ io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
     
     socket.on("join-room",(roomId : string) => {
+        console.log(`User ${socket.id} joining room: ${roomId}`);
         socket.join(roomId);
         if (!roomUsers[roomId]) roomUsers[roomId] = new Set();
         roomUsers[roomId].add(socket.id);
         console.log("User joined the room", roomId);
-        io.to(roomId).emit("joining-msg","A new user joined the room", roomId);
-        // Send the list of users in the room to the new user
-        socket.emit("users-in-room", Array.from(roomUsers[roomId]));
-        // Notify others of the new user
-        socket.to(roomId).emit("user-joined", socket.id);
+        
+        // Send list of existing users to the new joiner
+        const existingUsers = Array.from(roomUsers[roomId]).filter(id => id !== socket.id);
+        socket.emit("users-in-room", existingUsers);
+        
+        // Notify everyone in the room about the new user
+        io.to(roomId).emit("user-joined", socket.id);
     })
-
-    socket.on("get-users-in-room", (roomId) => {
-        socket.emit("users-in-room", Array.from(roomUsers[roomId] || []));
-    });
 
     socket.on("send-msg", (msg, roomId) => {
         console.log("Message sent to room", roomId);
         socket.to(roomId).emit("recieve-msg", msg);
     })
 
-    // Screen sharing events (now directed)
-    socket.on("screen-share-offer", ({ targetId, offer }) => {
-        io.to(targetId).emit("screen-share-offer", { offer, from: socket.id });
+    socket.on("offer", ({ offer, roomId }) => {
+        console.log(`Offer received from ${socket.id} for room ${roomId}`);
+        if (!roomId) {
+            console.error("RoomId is undefined in offer from", socket.id);
+            return;
+        }
+        // Broadcast to all users in the room except sender
+        socket.to(roomId).emit("offer", { offer, from: socket.id });
+        console.log(`Offer broadcasted to room ${roomId}`);
     });
 
-    socket.on("screen-share-answer", ({ targetId, answer }) => {
-        io.to(targetId).emit("screen-share-answer", { answer, from: socket.id });
+    socket.on("answer", ({ answer, roomId }) => {
+        console.log(`Answer received from ${socket.id} for room ${roomId}`);
+        if (!roomId) {
+            console.error("RoomId is undefined in answer from", socket.id);
+            return;
+        }
+        // Broadcast to all users in the room except sender
+        socket.to(roomId).emit("answer", { answer, from: socket.id });
+        console.log(`Answer broadcasted to room ${roomId}`);
     });
 
-    socket.on("screen-share-ice-candidate", ({ targetId, candidate }) => {
-        io.to(targetId).emit("screen-share-ice-candidate", { candidate, from: socket.id });
+    socket.on("ice-candidate", ({ candidate, roomId }) => {
+        console.log(`ICE candidate received from ${socket.id} for room ${roomId}`);
+        if (!roomId) {
+            console.error("RoomId is undefined in ICE candidate from", socket.id);
+            return;
+        }
+        // Broadcast to all users in the room except sender
+        socket.to(roomId).emit("ice-candidate", { candidate, from: socket.id });
+        console.log(`ICE candidate broadcasted to room ${roomId}`);
     });
 
     socket.on("disconnecting", () => {
