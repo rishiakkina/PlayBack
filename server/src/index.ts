@@ -8,12 +8,12 @@ const server = createServer(app);
 
 const io = new Server(server, {
     cors : {
-        origin : "http://localhost:3000"
+        origin : "https://play-back-iota.vercel.app/"
     }
 })
 
 app.use(express.json());
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors({ origin: 'https://play-back-iota.vercel.app/' }));
 
 type room = {
     roomName : string,
