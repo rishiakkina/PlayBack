@@ -2,18 +2,23 @@ import express, { Request, Response, RequestHandler } from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
 const server = createServer(app);
 
+const allowedOrigin = process.env.CORS_ORIGIN || "https://play-back-iota.vercel.app";
+
 const io = new Server(server, {
     cors : {
-        origin : "https://play-back-iota.vercel.app/"
+        origin : allowedOrigin
     }
 })
 
 app.use(express.json());
-app.use(cors({ origin: 'https://play-back-iota.vercel.app/' }));
+app.use(cors({ origin: allowedOrigin }));
 
 type room = {
     roomName : string,
