@@ -1,0 +1,14 @@
+services:
+  client:
+    build:
+      context: ./client
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+    ports:
+      - 3000:3000
+  server:
+    build: ./server
+    ports:
+      - 8080:8080
+    environment:
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}

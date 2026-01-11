@@ -9,7 +9,7 @@ dotenv.config();
 const app = express();
 const server = createServer(app);
 
-const allowedOrigin = process.env.CORS_ORIGIN || "https://play-back-iota.vercel.app";
+const allowedOrigin = process.env.CORS_ORIGIN || "http://localhost:3000";
 
 const io = new Server(server, {
     cors : {

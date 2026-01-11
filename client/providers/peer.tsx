@@ -114,12 +114,12 @@ export const PeerProvider = ({ children }: { children: React.ReactNode }) => {
         console.log("Received answer from:", from);
         
         const currentPeer = peerRef.current;
-        if (!peerRef.current) {
+        if (!currentPeer) {
             console.log("No peer connection available for answer");
             return;
         }
         try {
-            await peerRef.current.setRemoteDescription(answer);
+            await currentPeer.setRemoteDescription(answer);
         } catch (error) {
             console.error("Error setting remote description:", error);
         }
